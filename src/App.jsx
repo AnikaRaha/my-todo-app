@@ -88,7 +88,7 @@ export default function App() {
         {[['Today', stats.today, '#1a1a1a'], ['Completed', stats.done, '#1a1a1a'], ['Overdue', stats.overdue, '#c0392b']].map(([label, val, color]) => (
           <div key={label} style={{ background: '#fff', borderRadius: 10, padding: '12px 16px', border: '1px solid #e8e8e4' }}>
             <div style={{ fontSize: 12, color: '#888' }}>{label}</div>
-            <div style={{ fontSize: 24, fontWeight: 600, color }}>{val}</div>
+            <div data-testid={`stat-${label.toLowerCase()}-value`} style={{ fontSize: 24, fontWeight: 600, color }}>{val}</div>
           </div>
         ))}
       </div>
@@ -96,7 +96,7 @@ export default function App() {
       {/* Add task */}
       <div style={{ background: '#fff', border: '1px solid #e8e8e4', borderRadius: 12, padding: '14px', marginBottom: 16 }}>
         <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-          <input value={input} onChange={e => setInput(e.target.value)}
+          <input data-testid="task-input" value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && addTask()}
             placeholder="Add a task…"
             style={{ flex: 1, padding: '9px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 }}
@@ -104,14 +104,14 @@ export default function App() {
           <button onClick={addTask} style={{ background: '#1a1a1a', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 20px', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Add</button>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <input type="date" value={due} onChange={e => setDue(e.target.value)}
+          <input data-testid="due-date-input" type="date" value={due} onChange={e => setDue(e.target.value)}
             style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, color: '#555' }}
           />
-          <select value={priority} onChange={e => setPriority(e.target.value)}
+          <select data-testid="priority-select" value={priority} onChange={e => setPriority(e.target.value)}
             style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, color: '#555' }}>
             {PRIORITIES.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
           </select>
-          <select value={recur} onChange={e => setRecur(e.target.value)}
+          <select data-testid="recur-select" value={recur} onChange={e => setRecur(e.target.value)}
             style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, color: '#555' }}>
             <option value="none">No repeat</option>
             <option value="daily">↻ Daily</option>
@@ -125,13 +125,13 @@ export default function App() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 8 }}>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {['all', 'today', 'high', 'pending', 'done'].map(f => (
-            <button key={f} onClick={() => setFilter(f)} style={{
+            <button key={f} data-testid={`filter-${f}`} onClick={() => setFilter(f)} style={{
               padding: '5px 14px', borderRadius: 20, fontSize: 13, border: '1px solid #ddd', cursor: 'pointer',
               background: filter === f ? '#1a1a1a' : '#fff', color: filter === f ? '#fff' : '#555',
             }}>{f.charAt(0).toUpperCase() + f.slice(1)}</button>
           ))}
         </div>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+        <select data-testid="sort-select" value={sortBy} onChange={e => setSortBy(e.target.value)}
           style={{ padding: '5px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, color: '#555', cursor: 'pointer' }}>
           <option value="added">Sort: Date added</option>
           <option value="due">Sort: Due date</option>
@@ -141,9 +141,9 @@ export default function App() {
 
       {/* Task list */}
       {filtered.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '3rem', color: '#aaa', fontSize: 14 }}>No tasks here. Add one above!</div>
+        <div data-testid="empty-state" style={{ textAlign: 'center', padding: '3rem', color: '#aaa', fontSize: 14 }}>No tasks here. Add one above!</div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div data-testid="task-list" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {filtered.map(task => (
             <TaskCard key={task.id} task={task}
               onComplete={completeTask} onDelete={deleteTask}

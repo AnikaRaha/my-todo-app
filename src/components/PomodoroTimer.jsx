@@ -10,36 +10,43 @@ export default function PomodoroTimer({ task, onClose }) {
   const [count, setCount] = useState(0)
   const intervalRef = useRef(null)
 
+  // The authoritative countdown value for the ticking logic below. Updated
+  // synchronously at every write site (never via a setState updater — React's
+  // StrictMode double-invokes functional updaters to check purity, which
+  // would double any side effect placed inside one) so each tick always
+  // reads the true current value with no render round-trip lag.
+  const timeLeftRef = useRef(timeLeft)
+  function updateTimeLeft(value) {
+    timeLeftRef.current = value
+    setTimeLeft(value)
+  }
+
   useEffect(() => {
-    if (running) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft(t => {
-          if (t <= 1) {
-            clearInterval(intervalRef.current)
-            setRunning(false)
-            if (mode === 'focus') {
-              setCount(c => {
-                const next = c + 1
-                const nextMode = next % 4 === 0 ? 'long' : 'short'
-                setMode(nextMode)
-                setTimeLeft(MODES[nextMode])
-                return next
-              })
-            } else {
-              setMode('focus')
-              setTimeLeft(MODES.focus)
-            }
-            return 0
-          }
-          return t - 1
-        })
-      }, 1000)
-    }
-    return () => clearInterval(intervalRef.current)
-  }, [running, mode])
+    if (!running) return
+    const id = setInterval(() => {
+      const next = timeLeftRef.current - 1
+      if (next > 0) {
+        updateTimeLeft(next)
+        return
+      }
+      setRunning(false)
+      if (mode === 'focus') {
+        const nextCount = count + 1
+        const nextMode = nextCount % 4 === 0 ? 'long' : 'short'
+        setCount(nextCount)
+        setMode(nextMode)
+        updateTimeLeft(MODES[nextMode])
+      } else {
+        setMode('focus')
+        updateTimeLeft(MODES.focus)
+      }
+    }, 1000)
+    intervalRef.current = id
+    return () => clearInterval(id)
+  }, [running, mode, count])
 
   function switchMode(m) {
-    setMode(m); setTimeLeft(MODES[m]); setRunning(false)
+    setMode(m); updateTimeLeft(MODES[m]); setRunning(false)
     clearInterval(intervalRef.current)
   }
 
@@ -48,13 +55,13 @@ export default function PomodoroTimer({ task, onClose }) {
   const circumference = 2 * Math.PI * 54
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+    <div data-testid="pomodoro-modal" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
       <div style={{ background: '#fff', borderRadius: 20, padding: '2rem', width: 340, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
           <span style={{ fontSize: 13, color: '#888' }}>🍅 Pomodoro #{count + 1}</span>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: '#aaa', cursor: 'pointer' }}>✕</button>
+          <button data-testid="close-btn" onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: '#aaa', cursor: 'pointer' }}>✕</button>
         </div>
-        <div style={{ fontSize: 13, fontWeight: 500, color: '#555', marginBottom: 16 }}>{task.title}</div>
+        <div data-testid="pomodoro-task-title" style={{ fontSize: 13, fontWeight: 500, color: '#555', marginBottom: 16 }}>{task.title}</div>
         <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 24 }}>
           {Object.keys(MODES).map(m => (
             <button key={m} onClick={() => switchMode(m)} style={{
@@ -74,17 +81,17 @@ export default function PomodoroTimer({ task, onClose }) {
             />
           </svg>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 32, fontWeight: 600, letterSpacing: 2 }}>{mins}:{secs}</span>
+            <span data-testid="timer-display" style={{ fontSize: 32, fontWeight: 600, letterSpacing: 2 }}>{mins}:{secs}</span>
             <span style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{LABELS[mode]}</span>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-          <button onClick={() => switchMode('focus')} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', fontSize: 18, color: '#555', cursor: 'pointer' }}>↺</button>
+          <button data-testid="reset-btn" onClick={() => switchMode('focus')} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', fontSize: 18, color: '#555', cursor: 'pointer' }}>↺</button>
           <button onClick={() => setRunning(r => !r)} style={{ padding: '10px 32px', borderRadius: 10, border: 'none', background: '#1a1a1a', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
             {running ? 'Pause' : 'Start'}
           </button>
         </div>
-        {count > 0 && <div style={{ marginTop: 16, fontSize: 13, color: '#888' }}>🍅 × {count} completed</div>}
+        {count > 0 && <div data-testid="pomodoro-count" style={{ marginTop: 16, fontSize: 13, color: '#888' }}>🍅 × {count} completed</div>}
       </div>
     </div>
   )
