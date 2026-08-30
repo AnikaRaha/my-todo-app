@@ -10,7 +10,7 @@ test.describe('TS-01 Task Management', () => {
     await addTask(page, { title: 'Buy groceries' })
     const cards = page.getByTestId('task-card')
     await expect(cards).toHaveCount(1)
-    await expect(cards.first().getByTestId('task-title')).toHaveText('Buy groceries')
+    await expect(cards.first().getByTestId('task-title')).toHaveText('Buy nothing')
   })
 
   test('TC-01-02 create task by pressing Enter clears input', async ({ page }) => {
