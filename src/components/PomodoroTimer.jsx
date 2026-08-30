@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
 
+const MODES = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 }
+const LABELS = { focus: 'Focus', short: 'Short Break', long: 'Long Break' }
+
 export default function PomodoroTimer({ task, onClose }) {
-  const MODES = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 }
-  const LABELS = { focus: 'Focus', short: 'Short Break', long: 'Long Break' }
   const [mode, setMode] = useState('focus')
   const [timeLeft, setTimeLeft] = useState(MODES.focus)
   const [running, setRunning] = useState(false)
@@ -17,11 +18,13 @@ export default function PomodoroTimer({ task, onClose }) {
             clearInterval(intervalRef.current)
             setRunning(false)
             if (mode === 'focus') {
-              const next = count + 1
-              setCount(next)
-              const nextMode = next % 4 === 0 ? 'long' : 'short'
-              setMode(nextMode)
-              setTimeLeft(MODES[nextMode])
+              setCount(c => {
+                const next = c + 1
+                const nextMode = next % 4 === 0 ? 'long' : 'short'
+                setMode(nextMode)
+                setTimeLeft(MODES[nextMode])
+                return next
+              })
             } else {
               setMode('focus')
               setTimeLeft(MODES.focus)

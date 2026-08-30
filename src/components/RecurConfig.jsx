@@ -1,12 +1,10 @@
 import { todayStr } from '../utils'
 
 export default function RecurConfig({
-  recur, weekday, setWeekday, monthDay, setMonthDay,
+  recur, monthDay, setMonthDay,
   recurTime, setRecurTime, customDate, setCustomDate,
   customTime, setCustomTime, customTab, setCustomTab
 }) {
-  const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
   if (recur === 'daily') return (
     <div style={{ marginTop: 10, padding: '10px 12px', background: '#f9f9f9', borderRadius: 8, fontSize: 13, color: '#888' }}>
       ↻ Repeats every day

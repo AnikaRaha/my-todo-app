@@ -8,8 +8,15 @@ export const PRIORITY_COLORS = {
 
 export const WEEKDAY_NAMES = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
+function toLocalDateStr(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 export function todayStr() {
-  return new Date().toISOString().split('T')[0]
+  return toLocalDateStr(new Date())
 }
 
 export function fmtDate(d) {
@@ -17,8 +24,8 @@ export function fmtDate(d) {
   if (d === today) return 'today'
   const tomorrow = new Date()
   tomorrow.setDate(tomorrow.getDate() + 1)
-  if (d === tomorrow.toISOString().split('T')[0]) return 'tomorrow'
-  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  if (d === toLocalDateStr(tomorrow)) return 'tomorrow'
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
 export function nextRecurringDate(due, recur) {
@@ -29,7 +36,7 @@ export function nextRecurringDate(due, recur) {
   if (recur === 'daily') {
     const base = dueDate > today ? dueDate : today
     base.setDate(base.getDate() + 1)
-    return base.toISOString().split('T')[0]
+    return toLocalDateStr(base)
   }
 
   if (recur === 'monthly') {
@@ -42,7 +49,7 @@ export function nextRecurringDate(due, recur) {
       if (month > 11) { month = 0; year++ }
       const daysInMonth = new Date(year, month + 1, 0).getDate()
       if (daysInMonth >= targetDay) {
-        return new Date(year, month, targetDay).toISOString().split('T')[0]
+        return toLocalDateStr(new Date(year, month, targetDay))
       }
       month++
     }
@@ -51,7 +58,7 @@ export function nextRecurringDate(due, recur) {
   if (recur === 'yearly') {
     const next = new Date(dueDate)
     next.setFullYear(next.getFullYear() + 1)
-    return next.toISOString().split('T')[0]
+    return toLocalDateStr(next)
   }
 
   return due

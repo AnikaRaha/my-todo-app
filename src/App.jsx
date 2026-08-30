@@ -13,7 +13,6 @@ export default function App() {
   const [priority, setPriority] = useState('medium')
   const [due, setDue] = useState(todayStr())
   const [recur, setRecur] = useState('none')
-  const [showRecurConfig, setShowRecurConfig] = useState(false)
   const [filter, setFilter] = useState('all')
   const [sortBy, setSortBy] = useState('added')
   const [focusTask, setFocusTask] = useState(null)
@@ -24,7 +23,6 @@ export default function App() {
   // ── Handlers ───────────────────────────────────────────────────────────
   function addTask() {
     if (!input.trim()) return
-    const recurConfig = null
     setTasks(prev => [{
       id: Date.now(), title: input.trim(), priority,
       due,
@@ -32,7 +30,7 @@ export default function App() {
       recurConfig: null,
       done: false, addedAt: Date.now()
     }, ...prev])
-    setInput(''); setDue(todayStr()); setRecur('none'); setShowRecurConfig(false)
+    setInput(''); setDue(todayStr()); setRecur('none')
   }
 
   function completeTask(task) {
@@ -113,7 +111,7 @@ export default function App() {
             style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, color: '#555' }}>
             {PRIORITIES.map(p => <option key={p} value={p}>{p.charAt(0).toUpperCase() + p.slice(1)}</option>)}
           </select>
-          <select value={recur} onChange={e => { setRecur(e.target.value); setShowRecurConfig(e.target.value !== 'none') }}
+          <select value={recur} onChange={e => setRecur(e.target.value)}
             style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid #ddd', fontSize: 13, color: '#555' }}>
             <option value="none">No repeat</option>
             <option value="daily">↻ Daily</option>

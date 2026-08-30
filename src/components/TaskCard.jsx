@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { PRIORITY_COLORS, WEEKDAY_NAMES, todayStr, fmtDate } from '../utils'
+import { PRIORITY_COLORS, todayStr, fmtDate } from '../utils'
 
 export default function TaskCard({ task, onComplete, onDelete, onEdit, onFocus }) {
   const [hovered, setHovered] = useState(false)
