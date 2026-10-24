@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 const MODES = { focus: 25 * 60, short: 5 * 60, long: 15 * 60 }
 const LABELS = { focus: 'Focus', short: 'Short Break', long: 'Long Break' }
 
-export default function PomodoroTimer({ task, onClose }) {
+export default function PomodoroTimer({ task, onClose, onNotify }) {
   const [mode, setMode] = useState('focus')
   const [timeLeft, setTimeLeft] = useState(MODES.focus)
   const [running, setRunning] = useState(false)
@@ -36,9 +36,11 @@ export default function PomodoroTimer({ task, onClose }) {
         setCount(nextCount)
         setMode(nextMode)
         updateTimeLeft(MODES[nextMode])
+        onNotify?.(`Pomodoro #${nextCount} completed for "${task.title}"! Time for a ${nextMode === 'long' ? 'long' : 'short'} break.`)
       } else {
         setMode('focus')
         updateTimeLeft(MODES.focus)
+        onNotify?.(`Break over! Time to focus on "${task.title}"`)
       }
     }, 1000)
     intervalRef.current = id
@@ -52,46 +54,47 @@ export default function PomodoroTimer({ task, onClose }) {
 
   const mins = String(Math.floor(timeLeft / 60)).padStart(2, '0')
   const secs = String(timeLeft % 60).padStart(2, '0')
-  const circumference = 2 * Math.PI * 54
+  const circumference = 2 * Math.PI * 62
+  const progress = 1 - (timeLeft / MODES[mode])
 
   return (
-    <div data-testid="pomodoro-modal" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-      <div style={{ background: '#fff', borderRadius: 20, padding: '2rem', width: 340, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <span style={{ fontSize: 13, color: '#888' }}>🍅 Pomodoro #{count + 1}</span>
-          <button data-testid="close-btn" onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 20, color: '#aaa', cursor: 'pointer' }}>✕</button>
+    <div data-testid="pomodoro-modal" className="pomodoro-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="pomodoro-modal">
+        <div className="pomodoro-header">
+          <span className="pomodoro-count-label">🍅 Pomodoro #{count + 1}</span>
+          <button data-testid="close-btn" onClick={onClose} className="pomodoro-close-btn">✕</button>
         </div>
-        <div data-testid="pomodoro-task-title" style={{ fontSize: 13, fontWeight: 500, color: '#555', marginBottom: 16 }}>{task.title}</div>
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginBottom: 24 }}>
+        <div data-testid="pomodoro-task-title" className="pomodoro-task-title">{task.title}</div>
+        <div className="pomodoro-modes">
           {Object.keys(MODES).map(m => (
-            <button key={m} onClick={() => switchMode(m)} style={{
-              padding: '5px 12px', borderRadius: 20, border: 'none', fontSize: 12, cursor: 'pointer',
-              background: mode === m ? '#1a1a1a' : '#f0f0f0', color: mode === m ? '#fff' : '#555'
-            }}>{LABELS[m]}</button>
+            <button key={m} onClick={() => switchMode(m)}
+              className={`pomodoro-mode-btn${mode === m ? ' pomodoro-mode-btn--active' : ''}`}>
+              {LABELS[m]}
+            </button>
           ))}
         </div>
-        <div style={{ position: 'relative', width: 140, height: 140, margin: '0 auto 24px' }}>
-          <svg width="140" height="140" style={{ transform: 'rotate(-90deg)' }}>
-            <circle cx="70" cy="70" r="54" fill="none" stroke="#f0f0f0" strokeWidth="8" />
-            <circle cx="70" cy="70" r="54" fill="none"
-              stroke={mode === 'focus' ? '#c0392b' : '#276749'} strokeWidth="8"
+        <div className="pomodoro-ring">
+          <svg width="160" height="160" viewBox="0 0 160 160">
+            <circle cx="80" cy="80" r="62" fill="none" stroke="var(--border)" strokeWidth="8" />
+            <circle cx="80" cy="80" r="62" fill="none"
+              stroke={mode === 'focus' ? '#ef4444' : '#22c55e'} strokeWidth="8"
               strokeDasharray={circumference}
-              strokeDashoffset={circumference * (timeLeft / MODES[mode])}
+              strokeDashoffset={circumference * (1 - progress)}
               strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s' }}
             />
           </svg>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <span data-testid="timer-display" style={{ fontSize: 32, fontWeight: 600, letterSpacing: 2 }}>{mins}:{secs}</span>
-            <span style={{ fontSize: 11, color: '#aaa', marginTop: 2 }}>{LABELS[mode]}</span>
+          <div className="pomodoro-display">
+            <span data-testid="timer-display" className="pomodoro-time">{mins}:{secs}</span>
+            <span className="pomodoro-mode-label">{LABELS[mode]}</span>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-          <button data-testid="reset-btn" onClick={() => switchMode('focus')} style={{ padding: '10px 16px', borderRadius: 10, border: '1px solid #ddd', background: '#fff', fontSize: 18, color: '#555', cursor: 'pointer' }}>↺</button>
-          <button onClick={() => setRunning(r => !r)} style={{ padding: '10px 32px', borderRadius: 10, border: 'none', background: '#1a1a1a', color: '#fff', fontSize: 15, fontWeight: 600, cursor: 'pointer' }}>
+        <div className="pomodoro-controls">
+          <button data-testid="reset-btn" onClick={() => switchMode('focus')} className="pomodoro-reset-btn">↺</button>
+          <button onClick={() => setRunning(r => !r)} className="pomodoro-start-btn">
             {running ? 'Pause' : 'Start'}
           </button>
         </div>
-        {count > 0 && <div data-testid="pomodoro-count" style={{ marginTop: 16, fontSize: 13, color: '#888' }}>🍅 × {count} completed</div>}
+        {count > 0 && <div data-testid="pomodoro-count" className="pomodoro-completed">🍅 × {count} completed</div>}
       </div>
     </div>
   )

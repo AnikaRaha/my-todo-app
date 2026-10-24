@@ -1,28 +1,37 @@
 import { useState, useEffect, useRef } from 'react'
-import { PRIORITY_COLORS, todayStr, fmtDate } from '../utils'
+import { CATEGORIES, todayStr, fmtDate } from '../utils'
 
-export default function TaskCard({ task, onComplete, onDelete, onEdit, onFocus }) {
-  const [hovered, setHovered] = useState(false)
+export default function TaskCard({ task, onComplete, onDelete, onEdit, onFocus, onAddSubtask, onToggleSubtask, onDeleteSubtask }) {
   const [editing, setEditing] = useState(false)
   const [editVal, setEditVal] = useState(task.title)
+  const [showNotes, setShowNotes] = useState(false)
+  const [showSubtasks, setShowSubtasks] = useState(false)
+  const [subtaskInput, setSubtaskInput] = useState('')
   const inputRef = useRef(null)
+  const subtaskInputRef = useRef(null)
 
   useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+  useEffect(() => { if (showSubtasks && subtaskInputRef.current) subtaskInputRef.current.focus() }, [showSubtasks])
 
   function submitEdit() {
     if (editVal.trim()) onEdit(task.id, editVal.trim())
     setEditing(false)
   }
 
+  function handleAddSubtask() {
+    if (!subtaskInput.trim()) return
+    onAddSubtask(task.id, subtaskInput.trim())
+    setSubtaskInput('')
+  }
+
   const today = todayStr()
   const isOverdue = !task.done && task.due < today
-  const p = PRIORITY_COLORS[task.priority]
+  const subtasks = task.subtasks || []
+  const subtasksDone = subtasks.filter(s => s.done).length
+  const categoryObj = CATEGORIES.find(c => c.value === task.category) || null
 
   function recurLabel() {
     if (!task.recur) return null
-    if (task.recur === 'daily') return '↻ daily'
-    if (task.recur === 'monthly') return '↻ monthly'
-    if (task.recur === 'yearly') return '↻ yearly'
     return '↻ ' + task.recur
   }
 
@@ -30,61 +39,100 @@ export default function TaskCard({ task, onComplete, onDelete, onEdit, onFocus }
     <div
       data-testid="task-card"
       data-title={task.title}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: '#fff', borderRadius: 10, padding: '12px 14px',
-        display: 'flex', alignItems: 'center', gap: 12,
-        border: `1px solid ${hovered ? '#ccc' : '#e8e8e4'}`,
-        opacity: task.done ? 0.5 : 1, transition: 'border-color 0.15s',
-      }}
+      className={`task-card${task.done ? ' task-card--done' : ''} task-card--priority-${task.priority}`}
     >
-      <div data-testid="task-checkbox" onClick={() => onComplete(task)} style={{
-        width: 20, height: 20, borderRadius: '50%', flexShrink: 0, cursor: 'pointer',
-        border: task.done ? 'none' : '1.5px solid #ccc',
-        background: task.done ? '#1a1a1a' : 'transparent',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        {task.done && <span style={{ color: '#fff', fontSize: 11 }}>✓</span>}
-      </div>
+      <button data-testid="task-checkbox" onClick={() => onComplete(task)}
+        className={`task-checkbox${task.done ? ' task-checkbox--done' : ''}`}>
+        {task.done && <span className="check-icon">✓</span>}
+      </button>
 
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div className="task-content">
         {editing ? (
           <input data-testid="task-edit-input" ref={inputRef} value={editVal}
             onChange={e => setEditVal(e.target.value)}
             onBlur={submitEdit}
             onKeyDown={e => { if (e.key === 'Enter') submitEdit(); if (e.key === 'Escape') setEditing(false) }}
-            style={{ width: '100%', fontSize: 14, border: 'none', borderBottom: '1px solid #ccc', outline: 'none', padding: '2px 0' }}
-          />
+            className="task-edit-input" />
         ) : (
-          <div
-            data-testid="task-title"
-            onDoubleClick={() => !task.done && setEditing(true)}
-            title={task.done ? '' : 'Double-click to edit'}
-            style={{ fontSize: 14, textDecoration: task.done ? 'line-through' : 'none', color: task.done ? '#aaa' : '#1a1a1a', cursor: task.done ? 'default' : 'text' }}
-          >
-            {task.title}
-            {task.recur && (
-              <span data-testid="task-recur" style={{ marginLeft: 6, fontSize: 11, color: '#aaa' }}>{recurLabel()}</span>
+          <>
+            <div
+              data-testid="task-title"
+              onDoubleClick={() => !task.done && setEditing(true)}
+              title={task.done ? '' : 'Double-click to edit'}
+              className={`task-title${task.done ? ' task-title--done' : ''}`}
+            >
+              {task.title}
+              {task.recur && (
+                <span data-testid="task-recur" className="task-recur-badge">{recurLabel()}</span>
+              )}
+            </div>
+            {task.notes && (
+              <div className="task-notes-preview" onClick={() => setShowNotes(s => !s)}>
+                {showNotes ? task.notes : task.notes.length > 60 ? task.notes.slice(0, 60) + '…' : task.notes}
+              </div>
             )}
-          </div>
+          </>
         )}
-        <div style={{ display: 'flex', gap: 6, marginTop: 5, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span data-testid="task-priority" style={{ fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 20, background: p.bg, color: p.color }}>{task.priority}</span>
-          <span data-testid="task-due" style={{ fontSize: 12, color: isOverdue ? '#c0392b' : '#888' }}>
+
+        <div className="task-meta">
+          <span data-testid="task-priority" className={`priority-badge priority-badge--${task.priority}`}>{task.priority}</span>
+          <span data-testid="task-due" className={`task-due${isOverdue ? ' task-due--overdue' : ''}`}>
             {isOverdue ? '⚠ overdue' : fmtDate(task.due)}
           </span>
+          {categoryObj && (
+            <span className={`category-badge category-badge--${task.category}`}>{categoryObj.emoji} {categoryObj.label}</span>
+          )}
+          {subtasks.length > 0 && (
+            <span className="subtask-counter" onClick={() => setShowSubtasks(s => !s)}>
+              ☑ {subtasksDone}/{subtasks.length}
+            </span>
+          )}
         </div>
+
+        {/* Subtasks */}
+        {(showSubtasks || subtasks.length > 0) && !task.done && (
+          <div className="subtask-section">
+            {subtasks.length > 0 && (
+              <div className="subtask-mini-progress">
+                <div className="subtask-mini-track">
+                  <div className="subtask-mini-fill" style={{ width: subtasks.length > 0 ? `${(subtasksDone / subtasks.length) * 100}%` : '0%' }} />
+                </div>
+              </div>
+            )}
+            {subtasks.map(s => (
+              <div key={s.id} className="subtask-item">
+                <button
+                  className={`subtask-checkbox${s.done ? ' subtask-checkbox--done' : ''}`}
+                  onClick={() => onToggleSubtask(task.id, s.id)}>
+                  {s.done && '✓'}
+                </button>
+                <span className={`subtask-text${s.done ? ' subtask-text--done' : ''}`}>{s.text}</span>
+                <button className="subtask-delete" onClick={() => onDeleteSubtask(task.id, s.id)}>×</button>
+              </div>
+            ))}
+            <div className="subtask-add-row">
+              <input
+                ref={subtaskInputRef}
+                className="subtask-input"
+                value={subtaskInput}
+                onChange={e => setSubtaskInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddSubtask()}
+                placeholder="Add subtask…" />
+              <button className="subtask-add-btn" onClick={handleAddSubtask}>+</button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {hovered && (
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {!task.done && (
-            <button data-testid="task-focus-btn" onClick={() => onFocus(task)} style={{ padding: '4px 10px', borderRadius: 8, border: '1px solid #ddd', background: '#fff', fontSize: 12, color: '#555', cursor: 'pointer' }}>🍅 Focus</button>
-          )}
-          <button data-testid="task-delete-btn" onClick={() => onDelete(task.id)} style={{ background: 'none', border: 'none', color: '#bbb', fontSize: 18, padding: 4, cursor: 'pointer' }}>🗑</button>
-        </div>
-      )}
+      <div className="task-actions">
+        {!task.done && (
+          <>
+            <button onClick={() => setShowSubtasks(s => !s)} className="task-action-btn" title="Subtasks">☑</button>
+            <button data-testid="task-focus-btn" onClick={() => onFocus(task)} className="task-action-btn">🍅</button>
+          </>
+        )}
+        <button data-testid="task-delete-btn" onClick={() => onDelete(task.id)} className="task-delete-btn">🗑</button>
+      </div>
     </div>
   )
 }

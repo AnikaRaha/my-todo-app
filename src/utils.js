@@ -6,6 +6,16 @@ export const PRIORITY_COLORS = {
   low: { bg: '#f0faf3', color: '#276749' },
 }
 
+export const CATEGORIES = [
+  { value: 'none', label: 'No category', emoji: '' },
+  { value: 'personal', label: 'Personal', emoji: '👤' },
+  { value: 'work', label: 'Work', emoji: '💼' },
+  { value: 'shopping', label: 'Shopping', emoji: '🛒' },
+  { value: 'health', label: 'Health', emoji: '❤️' },
+  { value: 'study', label: 'Study', emoji: '📚' },
+  { value: 'finance', label: 'Finance', emoji: '💰' },
+]
+
 export const WEEKDAY_NAMES = ['', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 function toLocalDateStr(date) {
@@ -36,6 +46,12 @@ export function nextRecurringDate(due, recur) {
   if (recur === 'daily') {
     const base = dueDate > today ? dueDate : today
     base.setDate(base.getDate() + 1)
+    return toLocalDateStr(base)
+  }
+
+  if (recur === 'weekly') {
+    const base = dueDate > today ? dueDate : today
+    base.setDate(base.getDate() + 7)
     return toLocalDateStr(base)
   }
 
